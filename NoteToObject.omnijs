@@ -18,7 +18,7 @@
       new Alert("Missing Data", alertMsg).show();
     } else {
       var textDataObj = Data.fromString(textToWrite);
-      var textFileName = "note.json";
+      var textFileName = task.name + ".json";
       var wrapper = FileWrapper.withContents(textFileName, textDataObj);
       var filesaver = new FileSaver();
       var fileSaverPromise = filesaver.show(wrapper);
