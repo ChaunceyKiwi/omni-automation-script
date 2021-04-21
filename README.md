@@ -1,4 +1,4 @@
-# omni-automation-script
+# Omni Automation Script
 Script to automate OmniFocus actions
 
 ## Reference
