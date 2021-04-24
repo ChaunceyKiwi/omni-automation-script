@@ -1,0 +1,103 @@
+/*{
+    "type": "action",
+    "targets": ["omnifocus"],
+    "author": "Chauncey Liu",
+    "identifier": "com.omni-automation.of.note-cloud-sync",
+    "version": "1.0",
+    "description": "This action will sync selected task to cloud.",
+    "label": "Sync to Cloud",
+    "shortLabel": "Sync"
+}*/
+(() => {
+  /* Replace TOKEN with your own token */
+  const TOKEN = "FAKETOKEN";
+
+  var action = new PlugIn.Action(function (selection, sender) {
+    var task = generateObject(selection.tasks[0]);
+    if (task.length === 0) {
+      var alertMsg = "There is no content to export";
+      new Alert("Missing Data", alertMsg).show();
+    } else {
+      uploadData(task);
+    }
+  });
+
+  let uploadData = (activities) => {
+    let transformedActivities = transformData(activities);
+
+    for (let date in transformedActivities) {
+      let itemToInsert = {};
+      itemToInsert["Date"] = date;
+      itemToInsert["Contributions"] = transformedActivities[date];
+
+      /* Replace targetURL with your own REST API endpoint */
+      let targetURL = "http://localhost/Prod/data";
+      let request = URL.FetchRequest.fromString(targetURL);
+      request.headers = { "Content-Type": "application/json" };
+      request.method = "POST";
+      request.bodyString = JSON.stringify({ data: itemToInsert, token: TOKEN });
+
+      request.fetch().then((response) => {
+        let responseCode = response.statusCode;
+        if (responseCode >= 200 && responseCode < 300) {
+          var alertTitle = "Sync Result";
+          var alertMsg = response.bodyString;
+          var alert = new Alert(alertTitle, alertMsg);
+          alert.show();
+        } else {
+          throw new Error(`The server responded with ${responseCode} error.`);
+        }
+      });
+    }
+  };
+
+  let generateObject = (item) => {
+    let obj = [];
+
+    // Only export an item if it has tags and is completed
+    if (item.tags.length > 0 && item.completed) {
+      obj.push({
+        Date: getDateString(item.effectiveCompletedDate),
+        Tag: item.tags[0].name,
+        Summary: item.name,
+      });
+    }
+    for (const childItem of item.children) {
+      obj = obj.concat(generateObject(childItem));
+    }
+    return obj;
+  };
+
+  var getDateString = (date) => {
+    return (
+      new Intl.DateTimeFormat("en", { year: "numeric" }).format(date) +
+      new Intl.DateTimeFormat("en", { month: "2-digit" }).format(date) +
+      new Intl.DateTimeFormat("en", { day: "2-digit" }).format(date)
+    );
+  };
+
+  const transformData = (activities) => {
+    let dateToContributions = {};
+    activities.forEach((activity) => {
+      if (!(activity.Date in dateToContributions)) {
+        dateToContributions[activity.Date] = [];
+      }
+      let contribution = {};
+      contribution.Tag = activity.Tag;
+      contribution.Summary = activity.Summary;
+      contribution.Description = activity.Description
+        ? activity.Description
+        : [];
+      dateToContributions[activity.Date].push(contribution);
+    });
+    return dateToContributions;
+  };
+
+  action.validate = function (selection, sender) {
+    // validation code
+    // selection options: tasks, projects, folders, tags, allObjects
+    return selection.tasks.length === 1;
+  };
+
+  return action;
+})();
