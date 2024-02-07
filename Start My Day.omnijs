@@ -1,0 +1,51 @@
+/*{
+    "author": "Liu, Chauncey",
+    "targets": ["omnifocus"],
+    "type": "action",
+    "identifier": "com.chengxl.Start My Day",
+    "version": "0.1",
+    "description": "A plug-in that...",
+    "label": "Start My Day",
+    "mediumLabel": "Start My Day",
+    "longLabel": "Start My Day",
+    "paletteLabel": "Start My Day",
+}*/
+
+(() => {
+  const DAILY = "Daily";
+
+  var getDateString = (date) => {
+    return (
+      "#" +
+      new Intl.DateTimeFormat("en", { year: "numeric" }).format(date) +
+      new Intl.DateTimeFormat("en", { month: "2-digit" }).format(date) +
+      new Intl.DateTimeFormat("en", { day: "2-digit" }).format(date)
+    );
+  };
+
+  const action = new PlugIn.Action(function (selection) {
+    let dailyFolder = flattenedFolders.byName(DAILY);
+    if (!dailyFolder) {
+      dailyFolder = new Folder(DAILY, library.beginning);
+    }
+
+    const todayLabel = getDateString(new Date());
+    let todayFolder = dailyFolder.folderNamed(todayLabel);
+    if (!todayFolder) {
+      todayFolder = new Folder(todayLabel, dailyFolder);
+      new Project("Work", todayFolder);
+      new Project("Life", todayFolder);
+    } else {
+      new Alert("Creation failed", "Folder for today already exists!").show();
+    }
+  });
+
+  // If needed, uncomment, and add a function that returns true if the current selection is appropriate for the action.
+  /*
+    action.validate = function(selection){
+
+    };
+    */
+
+  return action;
+})();
